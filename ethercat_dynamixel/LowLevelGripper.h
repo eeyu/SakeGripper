@@ -1,12 +1,8 @@
-#ifndef __GRIPPER__
-#define __GRIPPER__
+#ifndef __LLGRIPPER__
+#define __LLGRIPPER__
 
 #include <DynamixelShield.h>
 #include "Timer.h"
-
-
-#define GRIPPER_SCALE_MIN 0
-#define GRIPPER_SCALE_MAX 100
 
 class LowLevelGripper {
 private:
@@ -20,14 +16,16 @@ private:
 
     bool is_busy;
     Timer check_motion_timer;
+    Timer calibration_timer;
+    bool is_in_calibration = false;
     int last_position = 10000;
 
 public:
-    Gripper() {
+    LowLevelGripper() {
 
     }
 
-    Gripper(int nid, DynamixelShield *ndxl) {
+    LowLevelGripper(int nid, DynamixelShield *ndxl) {
         dxl_id = nid;
         dxl = ndxl;
         setSingleResolution();
@@ -35,26 +33,62 @@ public:
 
         is_busy = false;
         check_motion_timer.reset(0.05);
+        calibration_timer.reset(4.0);
     }
 
-    // Find the difference between write address and write word in python
+    void operate() {
+        if (is_in_calibration) 
+        {
+            if (calibrationHasFinished()) 
+            {
+                finishCalibration();
+            }
+        } 
+        else 
+        {
+            if (check_motion_timer.timeOut()) 
+            {
+                if (!isMoving()) 
+                {
+                    is_busy = false;
+                }
+                last_position = getAbsolutePosition();
+                check_motion_timer.reset();
+            }
+        }
+    }
+
+    // Close the gripper to set position
     void calibrate() {
         debugPrintln(String("Calibrating: ") + dxl_id);
+        beginCalibration();
+        calibration_timer.reset(4.0); // will probably take this much time to fully close
+        is_busy = true;
+    }
+
+private:
+    void beginCalibration() {
+        is_in_calibration = true;
         dxl->setOperatingMode(dxl_id, OP_EXTENDED_POSITION);
         dxl->writeControlTableItem(ControlTableItem::TORQUE_LIMIT, dxl_id, 500); // torque limit 500
         dxl->writeControlTableItem(ControlTableItem::TORQUE_ENABLE, dxl_id, 0); // torque enable off
         dxl->writeControlTableItem(ControlTableItem::TORQUE_CTRL_MODE_ENABLE, dxl_id, 1); // goal torque mode on
         dxl->writeControlTableItem(ControlTableItem::GOAL_TORQUE, dxl_id, 1024 + 100); // goal torque CW and value 100
-
-        delay(4 * 1000); // time to fully close
-
+    }
+    
+    void finishCalibration() {
         dxl->writeControlTableItem(ControlTableItem::GOAL_TORQUE, dxl_id, 1024 + 10); // reduce the load or something
         dxl->writeControlTableItem(ControlTableItem::MULTI_TURN_OFFSET, dxl_id, 0); //  multi turn offset is 0
         zero_position = getAbsolutePosition();
-
+        is_in_calibration = false;
         debugPrintln("Calibrated");
     }
 
+    bool calibrationHasFinished() {
+        return calibration_timer.timeOut() && is_in_calibration;
+    }
+
+public:
     // 0 to 100 for each
     void gotoPositionWithTorque(int position, int closing_torque) { 
         if (!is_busy) {
@@ -100,16 +134,6 @@ public:
         return is_busy;
     }
 
-    void operate() {
-        if (check_motion_timer.timeOut()) {
-            if (!isMoving()) {
-                is_busy = false;
-            }
-            last_position = getAbsolutePosition();
-            check_motion_timer.reset();
-        }
-    }
-
     void setBusy() {
         is_busy = true;
     }
@@ -125,8 +149,6 @@ private:
         dxl->writeControlTableItem(ControlTableItem::GOAL_POSITION, dxl_id, (zero_position + position));
         setBusy();
     }
-
-
 
     bool isMoving() {
         return (last_position != getAbsolutePosition());
@@ -189,9 +211,6 @@ private:
         DEBUG_SERIAL.print(s);
         #endif
     }
-
-
-
 };
 
 #endif
