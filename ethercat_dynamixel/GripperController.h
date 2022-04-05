@@ -27,25 +27,35 @@ public:
         ecatCommandInfo = necatCommandInfo;
     }
 
+    EcatReplyInfo getReplyInfo() {
+        ecatReplyInfo.busy = isBusy();
+        ecatReplyInfo.position = getPosition();
+        return ecatReplyInfo;
+    }
+
     int isBusy() {
         return llGripper.isBusy();
     }
 
+    double getPosition() {
+        return llGripper.getPosition();
+    }
+
     void doControl() {
         llGripper.operate();
-        bool newCommandWasSent = (lastCommandSignal == 0) && (ecatCommandInfo.signal != 0);
+        bool newCommandWasSent = (lastCommandSignal == EcatCommandSignal::WAITING) 
+            && (ecatCommandInfo.command != EcatCommandSignal::WAITING);
 
 //        if (!llGripper.isBusy() && newCommandWasSent) {
-        if (newCommandWasSent) {
+        if (newCommandWasSent || ecatCommandInfo.command == EcatCommandSignal::GOTO) {
             executeCommand(ecatCommandInfo);
         }
-        lastCommandSignal = ecatCommandInfo.signal;
+        lastCommandSignal = ecatCommandInfo.command;
     }
 
 private:
     void executeCommand(EcatCommandInfo ecatCommandInfo) {
-        DEBUG_SERIAL.print("Sending to gripper: "); DEBUG_SERIAL.println(ecatCommandInfo.gripper_id);
-        switch (ecatCommandInfo.signal) {
+        switch (ecatCommandInfo.command) {
             case CALIBRATE:
                 DEBUG_SERIAL.println("execute calibrate");
                 llGripper.calibrate();

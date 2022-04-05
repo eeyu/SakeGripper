@@ -29,9 +29,15 @@ void setup()
 void loop()                                            
 {                                                     
     ecatManager.operate();
-    EcatCommandInfo command = ecatManager.getEcatCommandInfo();
-    gripperManager.sendEcatCommand(command);
+    EcatCommandInfo g1Command = ecatManager.getEcatCommandInfoForGripper(1);
+    EcatCommandInfo g2Command = ecatManager.getEcatCommandInfoForGripper(2);
+
+    gripperManager.sendEcatCommandToGripper(g1Command, 1);
+    gripperManager.sendEcatCommandToGripper(g2Command, 2);
     gripperManager.operate();
-    EcatReplyInfo reply = gripperManager.getEcatReplyInfo();
-    ecatManager.setEcatReplyInfo(reply);
+    EcatReplyInfo g1Reply = gripperManager.getEcatReplyInfoForGripper(1);
+    EcatReplyInfo g2Reply = gripperManager.getEcatReplyInfoForGripper(2);
+    
+    ecatManager.setEcatReplyInfoForGripper(g1Reply, 1);
+    ecatManager.setEcatReplyInfoForGripper(g2Reply, 2);
 }

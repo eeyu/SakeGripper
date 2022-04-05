@@ -66,6 +66,13 @@ public:
         is_busy = true;
     }
 
+    int getPosition() {
+        // Get position in dynamixel units
+        int rawServoPosition = getAbsolutePosition() - zero_position;
+        // Scale to (0,100)
+        return downScale(rawServoPosition, GRIP_MAX);
+    }
+
 private:
     void beginCalibration() {
         is_in_calibration = true;
