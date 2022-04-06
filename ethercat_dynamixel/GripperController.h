@@ -43,7 +43,7 @@ public:
 
     void doControl() {
         llGripper.operate();
-        bool newCommandWasSent = (lastCommandSignal == EcatCommandSignal::WAITING) 
+        bool newCommandWasSent = (lastCommandSignal != ecatCommandInfo.command) 
             && (ecatCommandInfo.command != EcatCommandSignal::WAITING);
 
 //        if (!llGripper.isBusy() && newCommandWasSent) {
