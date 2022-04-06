@@ -13,29 +13,27 @@ enum EcatCommandSignal {
 #define MAX_SIGNAL_VAL 4
 
 struct EcatCommandInfo {
-    EcatCommandSignal signal;
+    EcatCommandSignal command;
     uint8_t position;
     uint8_t torque;
-    uint8_t gripper_id;
 
     EcatCommandInfo() {
-        signal = WAITING;
+        command = WAITING;
     }
 
-    EcatCommandInfo(uint8_t ngripper_id, uint8_t nsignal, uint8_t nposition, uint8_t ntorque) {
-        if (nsignal > MAX_SIGNAL_VAL || nsignal < 0) {
-            nsignal = 0;
+    EcatCommandInfo(uint8_t nCommand, uint8_t nPosition, uint8_t nTorque) {
+        if (nCommand > MAX_SIGNAL_VAL || nCommand < 0) {
+            nCommand = 0;
         }
-        gripper_id = ngripper_id;
-        signal = static_cast<EcatCommandSignal>(nsignal);
-        position = constrain(nposition, GRIPPER_SCALE_MIN, GRIPPER_SCALE_MAX);
-        torque = constrain(ntorque, GRIPPER_SCALE_MIN, GRIPPER_SCALE_MAX);
+        command = static_cast<EcatCommandSignal>(nCommand);
+        position = constrain(nPosition, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
+        torque = constrain(nTorque, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
     }
 };
 
 struct EcatReplyInfo {
-    uint8_t gripper1_busy;
-    uint8_t gripper2_busy;
+    uint8_t busy;
+    uint8_t position;
 };
 
 #endif

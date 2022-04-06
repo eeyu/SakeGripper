@@ -15,8 +15,10 @@ private:
     GripperController gripper2;
     DynamixelShield dxl;
     Timer dxl_timer;
-    EcatCommandInfo ecatCommandInfo = EcatCommandInfo();
-    EcatReplyInfo ecatReplyInfo = EcatReplyInfo();
+    EcatCommandInfo g1EcatCommandInfo = EcatCommandInfo();
+    EcatCommandInfo g2EcatCommandInfo = EcatCommandInfo();
+    EcatReplyInfo g1EcatReplyInfo = EcatReplyInfo();
+    EcatReplyInfo g2EcatReplyInfo = EcatReplyInfo();
 
 public:
     GripperManager() {    
@@ -32,35 +34,37 @@ public:
         dxl_timer.reset(0.01);
     }
 
-    void sendEcatCommand(EcatCommandInfo necatCommandInfo) {
-        ecatCommandInfo = necatCommandInfo;
+    void sendEcatCommandToGripper(EcatCommandInfo necatCommandInfo, int id) {
+        if (id == 1)
+        {
+            g1EcatCommandInfo = necatCommandInfo;
+        }
+        else 
+        {
+            g2EcatCommandInfo = necatCommandInfo;
+        }
     }
 
-    EcatReplyInfo getEcatReplyInfo() {
-        return ecatReplyInfo;
+    EcatReplyInfo getEcatReplyInfoForGripper(int id) {
+        if (id == 1)
+        {
+            return g1EcatReplyInfo;
+        }
+        return g2EcatReplyInfo;
+        
     }
 
     void operate() {
-        sendCommandToAppropriateGripper(ecatCommandInfo);
+        gripper1.sendEcatCommand(g1EcatCommandInfo);
+        gripper2.sendEcatCommand(g2EcatCommandInfo);
+
         gripper1.doControl();
         gripper2.doControl();
-        ecatReplyInfo.gripper1_busy = gripper1.isBusy();
-        ecatReplyInfo.gripper2_busy = gripper2.isBusy();
+
+        g1EcatReplyInfo = gripper1.getReplyInfo();
+        g2EcatReplyInfo = gripper2.getReplyInfo();
     }
-private:
-    void sendCommandToAppropriateGripper(EcatCommandInfo ecatCommandInfo) {
-        int gripperId = ecatCommandInfo.gripper_id;
-        switch (gripperId) {
-            case 1:
-                gripper1.sendEcatCommand(ecatCommandInfo);
-                break;
-            case 2:
-                gripper2.sendEcatCommand(ecatCommandInfo);
-                break;
-            default:
-                break;
-        }
-    }
+
 };
 
 #endif

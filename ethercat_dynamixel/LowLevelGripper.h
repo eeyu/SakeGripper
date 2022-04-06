@@ -66,6 +66,13 @@ public:
         is_busy = true;
     }
 
+    int getPosition() {
+        // Get position in dynamixel units
+        int rawServoPosition = getAbsolutePosition() - zero_position;
+        // Scale to (0,100)
+        return downScale(rawServoPosition, GRIP_MAX);
+    }
+
 private:
     void beginCalibration() {
         is_in_calibration = true;
@@ -92,8 +99,8 @@ public:
     // 0 to 100 for each
     void gotoPositionWithTorque(int position, int closing_torque) { 
         if (!is_busy) {
-            position = clamp(position, GRIPPER_SCALE_MIN, GRIPPER_SCALE_MAX);
-            closing_torque = clamp(closing_torque, GRIPPER_SCALE_MIN, GRIPPER_SCALE_MAX);
+            position = clamp(position, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
+            closing_torque = clamp(closing_torque, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
             int servo_position = scale(position, GRIP_MAX);
             setMaxEffort(closing_torque);
 
@@ -103,8 +110,9 @@ public:
                 gotoServoPosition(servo_position);
             }
 
-            int holding_torque = min(TORQUE_HOLD, closing_torque);
-            setMaxEffort(holding_torque);
+            // int holding_torque = min(TORQUE_HOLD, closing_torque);
+            // setMaxEffort(holding_torque);
+            setMaxEffort(closing_torque);
         } else {
             debugPrintln("Busy");
         }
@@ -120,7 +128,7 @@ public:
 
     void open() {
         if (!is_busy) {
-            gotoPositionWithTorque(100, 100);
+            gotoPositionWithTorque(GRIPPER_RESOLUTION_MAX, GRIPPER_RESOLUTION_MAX);
         } else {
             debugPrintln("Busy");
         }
@@ -178,13 +186,13 @@ private:
     }
 
     int scale(int n, int max) {
-        int result = map(n, GRIPPER_SCALE_MIN, GRIPPER_SCALE_MAX, 0, max);
+        int result = map(n, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX, 0, max);
         return clamp(result, 0, max);
     }
 
     int downScale(int n, int max) {
-        int result = map(n, 0, max, GRIPPER_SCALE_MIN, GRIPPER_SCALE_MAX);
-        return clamp(result, 0, GRIPPER_SCALE_MAX);
+        int result = map(n, 0, max, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
+        return clamp(result, 0, GRIPPER_RESOLUTION_MAX);
     }
 
     int clamp(int x, int min, int max) {

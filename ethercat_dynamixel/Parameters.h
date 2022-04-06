@@ -7,7 +7,7 @@ const float DXL_PROTOCOL_VERSION = 1.0;
 const float DXL_BAUD_RATE = 57142;
 
 
-#define GRIPPER_SCALE_MIN 0
-#define GRIPPER_SCALE_MAX 100
+#define GRIPPER_RESOLUTION_MIN 0
+#define GRIPPER_RESOLUTION_MAX 255
 
 #endif

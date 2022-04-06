@@ -12,8 +12,10 @@ private:
     EasyCAT EASYCAT;            
     Timer ecat_timer;
 
-    EcatCommandInfo ecatCommandInfo = EcatCommandInfo();
-    EcatReplyInfo ecatReplyInfo = EcatReplyInfo();
+    EcatCommandInfo g1EcatCommandInfo = EcatCommandInfo();
+    EcatCommandInfo g2EcatCommandInfo = EcatCommandInfo();
+    EcatReplyInfo g1EcatReplyInfo = EcatReplyInfo();
+    EcatReplyInfo g2EcatReplyInfo = EcatReplyInfo();
 
 public:
     EcatManager() {
@@ -38,22 +40,38 @@ public:
         {                                                     
             ecat_timer.reset();
 
-            ecatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.gripper_id,
-                                                EASYCAT.BufferOut.Cust.command_signal,
-                                                EASYCAT.BufferOut.Cust.position,
-                                                EASYCAT.BufferOut.Cust.torque);
+            g1EcatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.g1Command,
+                                                EASYCAT.BufferOut.Cust.g1Position,
+                                                EASYCAT.BufferOut.Cust.g1Torque);
+            g2EcatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.g2Command,
+                                                EASYCAT.BufferOut.Cust.g2Position,
+                                                EASYCAT.BufferOut.Cust.g2Torque);
 
-            EASYCAT.BufferIn.Cust.gripper1_busy = ecatReplyInfo.gripper1_busy;
-            EASYCAT.BufferIn.Cust.gripper2_busy = ecatReplyInfo.gripper2_busy;
+            EASYCAT.BufferIn.Cust.g1Busy = g1EcatReplyInfo.busy;
+            EASYCAT.BufferIn.Cust.g1Position = g1EcatReplyInfo.position;
+            EASYCAT.BufferIn.Cust.g2Busy = g2EcatReplyInfo.busy;
+            EASYCAT.BufferIn.Cust.g2Position = g2EcatReplyInfo.position;
         }
     }
 
-    EcatCommandInfo getEcatCommandInfo() {
-        return ecatCommandInfo;
+    EcatCommandInfo getEcatCommandInfoForGripper(int id) {
+        if (id == 1)
+        {
+            return g1EcatCommandInfo;
+        }
+        return g2EcatCommandInfo;
     }
 
-    void setEcatReplyInfo(EcatReplyInfo necatReplyInfo) {
-        ecatReplyInfo = necatReplyInfo;
+    void setEcatReplyInfoForGripper(EcatReplyInfo necatReplyInfo, int id) {
+        if (id == 1)
+        {
+            g1EcatReplyInfo = necatReplyInfo;
+        }
+        else 
+        {
+            g2EcatReplyInfo = necatReplyInfo;
+        }
+        
     }
 };
 
