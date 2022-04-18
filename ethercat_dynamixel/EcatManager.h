@@ -36,22 +36,22 @@ public:
 
     void operate() {
         EASYCAT.MainTask();
-        if (ecat_timer.timeOut())                    
-        {                                                     
-            ecat_timer.reset();
+//        if (ecat_timer.timeOut())                    
+//        {                                                     
+        ecat_timer.reset();
 
-            g1EcatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.g1Command,
-                                                EASYCAT.BufferOut.Cust.g1Position,
-                                                EASYCAT.BufferOut.Cust.g1Torque);
-            g2EcatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.g2Command,
-                                                EASYCAT.BufferOut.Cust.g2Position,
-                                                EASYCAT.BufferOut.Cust.g2Torque);
+        g1EcatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.g1Command,
+                                            EASYCAT.BufferOut.Cust.g1Position,
+                                            EASYCAT.BufferOut.Cust.g1Torque);
+        g2EcatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.g2Command,
+                                            EASYCAT.BufferOut.Cust.g2Position,
+                                            EASYCAT.BufferOut.Cust.g2Torque);
 
-            EASYCAT.BufferIn.Cust.g1Busy = g1EcatReplyInfo.busy;
-            EASYCAT.BufferIn.Cust.g1Position = g1EcatReplyInfo.position;
-            EASYCAT.BufferIn.Cust.g2Busy = g2EcatReplyInfo.busy;
-            EASYCAT.BufferIn.Cust.g2Position = g2EcatReplyInfo.position;
-        }
+        EASYCAT.BufferIn.Cust.g1Busy = g1EcatReplyInfo.busy;
+        EASYCAT.BufferIn.Cust.g1Position = g1EcatReplyInfo.position;
+        EASYCAT.BufferIn.Cust.g2Busy = g2EcatReplyInfo.busy;
+        EASYCAT.BufferIn.Cust.g2Position = g2EcatReplyInfo.position;
+//        }
     }
 
     EcatCommandInfo getEcatCommandInfoForGripper(int id) {
