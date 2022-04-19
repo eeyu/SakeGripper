@@ -73,6 +73,10 @@ public:
         return downScale(rawServoPosition, GRIP_MAX);
     }
 
+    void setZero(int zero) {
+        zero_position = zero;
+    }
+
 private:
     void beginCalibration() {
         is_in_calibration = true;
