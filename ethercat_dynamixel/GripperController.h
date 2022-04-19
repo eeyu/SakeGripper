@@ -53,6 +53,10 @@ public:
         lastCommandSignal = ecatCommandInfo.command;
     }
 
+    void setZero(int zero) {
+        llGripper.setZero(zero);
+    }
+
 private:
     void executeCommand(EcatCommandInfo ecatCommandInfo) {
         switch (ecatCommandInfo.command) {
