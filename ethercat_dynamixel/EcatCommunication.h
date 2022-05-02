@@ -8,7 +8,8 @@ enum EcatCommandSignal {
     CALIBRATE = 1,
     GOTO = 2,
     RELEASE = 3,
-    OPEN = 4
+    OPEN = 4,
+    SET_TORQUE = 5
 };
 #define MAX_SIGNAL_VAL 4
 

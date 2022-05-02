@@ -34,6 +34,9 @@ public:
         is_busy = false;
         check_motion_timer.reset(0.05);
         calibration_timer.reset(4.0);
+
+        // Safety checks. Shuts down
+        dxl->writeControlTableItem(ControlTableItem::SHUTDOWN, dxl_id, 0x3D);
     }
 
     void operate() {
@@ -77,6 +80,19 @@ public:
         zero_position = zero;
     }
 
+    bool exceededOperationalSafetyChecks() {
+        // if (torque > max torque for n seconds) {
+        //     return true;
+        // }
+        
+        int currentTemperature = dxl->readControlTableItem(ControlTableItem::PRESENT_TEMPERATURE, dxl_id);
+        int maxTemperature = dxl->readControlTableItem(ControlTableItem::TEMPERATURE_LIMIT, dxl_id);
+        if (currentTemperature > maxTemperature) {
+            return true;
+        }
+        return false;
+    }
+
 private:
     void beginCalibration() {
         is_in_calibration = true;
@@ -99,43 +115,50 @@ private:
         return calibration_timer.timeOut() && is_in_calibration;
     }
 
+
+
 public:
     // 0 to 100 for each
     void gotoPositionWithTorque(int position, int closing_torque) { 
-        if (!is_busy) {
-            position = clamp(position, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
-            closing_torque = clamp(closing_torque, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
-            int servo_position = scale(position, GRIP_MAX);
-            setMaxEffort(closing_torque);
+        // if (!is_busy) {
+        position = clamp(position, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
+        closing_torque = clamp(closing_torque, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
+        int servo_position = scale(position, GRIP_MAX);
+        setMaxEffort(closing_torque);
 
-            if (position == 0) {
-                closeWithTorque();
-            } else {
-                gotoServoPosition(servo_position);
-            }
-
-            // int holding_torque = min(TORQUE_HOLD, closing_torque);
-            // setMaxEffort(holding_torque);
-            setMaxEffort(closing_torque);
+        if (position == 0) {
+            closeWithTorque();
         } else {
-            debugPrintln("Busy");
+            gotoServoPosition(servo_position);
         }
+
+        // int holding_torque = min(TORQUE_HOLD, closing_torque);
+        // setMaxEffort(holding_torque);
+        setMaxEffort(closing_torque);
+        // } else {
+        //     debugPrintln("Busy");
+        // }
     }
 
     void release() {
-        if (!is_busy) {
-            setTorqueMode(false);
-        } else {
-            debugPrintln("Busy");
-        }
+        // if (!is_busy) {
+        setTorqueMode(false);
+        // } else {
+        //     debugPrintln("Busy");
+        // }
     }
 
     void open() {
-        if (!is_busy) {
-            gotoPositionWithTorque(GRIPPER_RESOLUTION_MAX, GRIPPER_RESOLUTION_MAX);
-        } else {
-            debugPrintln("Busy");
-        }
+        // if (!is_busy) {
+        gotoPositionWithTorque(GRIPPER_RESOLUTION_MAX, GRIPPER_RESOLUTION_MAX);
+        // } else {
+        //     debugPrintln("Busy");
+        // }
+    }
+
+    void setTorque(int torque) {
+        torque = clamp(torque, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
+        setMaxEffort(torque);
     }
 
     int getTemperature() {

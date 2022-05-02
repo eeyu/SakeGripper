@@ -42,6 +42,9 @@ public:
     }
 
     void doControl() {
+        if (llGripper.exceededOperationalSafetyChecks()) {
+            llGripper.release();
+        }
         llGripper.operate();
         bool newCommandWasSent = (lastCommandSignal != ecatCommandInfo.command) 
             && (ecatCommandInfo.command != EcatCommandSignal::WAITING);
@@ -74,6 +77,10 @@ private:
                 break;
             case OPEN:
                 llGripper.open();
+                DEBUG_SERIAL.println("execute open");
+                break;
+            case SET_TORQUE:
+                llGripper.setTorque(ecatCommandInfo.torque);
                 DEBUG_SERIAL.println("execute open");
                 break;
             default:
