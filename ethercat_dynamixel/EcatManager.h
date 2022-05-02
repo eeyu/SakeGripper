@@ -10,7 +10,7 @@
 class EcatManager {
 private:
     EasyCAT EASYCAT;            
-    Timer ecat_timer;
+    // Timer ecat_timer;
 
     EcatCommandInfo g1EcatCommandInfo = EcatCommandInfo();
     EcatCommandInfo g2EcatCommandInfo = EcatCommandInfo();
@@ -30,15 +30,15 @@ public:
         } else {                                                               
             DEBUG_SERIAL.print ("initialization failed");                        
         }
-        ecat_timer.usePrecision();
-        ecat_timer.reset(0.001);
+        // ecat_timer.usePrecision();
+        // ecat_timer.set(0.001);
     }
 
     void operate() {
         EASYCAT.MainTask();
 //        if (ecat_timer.timeOut())                    
 //        {                                                     
-        ecat_timer.reset();
+        // ecat_timer.restart();
 
         g1EcatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.g1Command,
                                             EASYCAT.BufferOut.Cust.g1Position,

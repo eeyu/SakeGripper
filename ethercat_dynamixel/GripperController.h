@@ -7,11 +7,14 @@
 #include "Timer.h"
 #include "EcatCommunication.h"
 #include "LowLevelGripper.h"
+#include "MathUtil.h"
+
+// Manages single gripper. Ties together ecat and dynamixel
 
 class GripperController {
 private:
     LowLevelGripper llGripper;
-    EcatCommandSignal lastCommandSignal = 0;
+    EcatCommandSignal lastCommandSignal = WAITING;
     EcatCommandInfo ecatCommandInfo = EcatCommandInfo();
     EcatReplyInfo ecatReplyInfo = EcatReplyInfo();
 
@@ -42,9 +45,6 @@ public:
     }
 
     void doControl() {
-        if (llGripper.exceededOperationalSafetyChecks()) {
-            llGripper.release();
-        }
         llGripper.operate();
         bool newCommandWasSent = (lastCommandSignal != ecatCommandInfo.command) 
             && (ecatCommandInfo.command != EcatCommandSignal::WAITING);
@@ -56,23 +56,32 @@ public:
         lastCommandSignal = ecatCommandInfo.command;
     }
 
+    float convertEcatToPercent(int ecatValue) {
+        float percent = (1.0 * ecatValue) / ECAT_RESOLUTION;
+        return fconstrain(percent, 0.0, 1.0);
+    }
+
     void setZero(int zero) {
         llGripper.setZero(zero);
     }
 
 private:
     void executeCommand(EcatCommandInfo ecatCommandInfo) {
+        float positionRatio;
+        float torqueRatio;
         switch (ecatCommandInfo.command) {
             case CALIBRATE:
                 DEBUG_SERIAL.println("execute calibrate");
                 llGripper.calibrate();
                 break;
             case GOTO:
-                llGripper.gotoPositionWithTorque(ecatCommandInfo.position, ecatCommandInfo.torque);
+                positionRatio = convertEcatToPercent(ecatCommandInfo.position);
+                torqueRatio = convertEcatToPercent(ecatCommandInfo.torque);
+                llGripper.gotoPositionWithTorque(positionRatio, torqueRatio);
                 DEBUG_SERIAL.println("execute goto");
                 break;
             case RELEASE:
-                llGripper.release();
+                llGripper.removeTorque();
                 DEBUG_SERIAL.println("execute release");
                 break;
             case OPEN:
@@ -80,7 +89,8 @@ private:
                 DEBUG_SERIAL.println("execute open");
                 break;
             case SET_TORQUE:
-                llGripper.setTorque(ecatCommandInfo.torque);
+                torqueRatio = convertEcatToPercent(ecatCommandInfo.torque);
+                llGripper.setTorque(torqueRatio);
                 DEBUG_SERIAL.println("execute open");
                 break;
             default:

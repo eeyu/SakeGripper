@@ -10,42 +10,71 @@
 // Can be set to check milliseconds or microseconds.
 // Interaction is always in seconds
 struct Timer {
+private:
     unsigned long time_start;
     unsigned long time_finish;
     unsigned long (*checkTime)();
     bool using_precision;
 
+    bool is_turned_off;
+public:
     Timer(unsigned long ntime_finish=0) {
         checkTime = millis;
         using_precision = false;
-        reset(ntime_finish);   
+        is_turned_off = true;
+        set(ntime_finish);   
     }
 
     void usePrecision()  {
         checkTime = micros;
+        is_turned_off = false;
         using_precision = true;
-        reset();
+        restart();
     }
 
     // Starts the timer to run for t ms.
-    void reset(float t=0) {
+    void set(float t) {
         time_start = checkTime();
-        if (t > 0) { // If t is unset, reset with existing time. Else, reset with new time
-            if (using_precision) {
-                time_finish = (unsigned long) (t * 1000000);
-            } else {
-                time_finish = (unsigned long) (t * 1000);
-            }
+        if (using_precision) {
+            time_finish = (unsigned long) (t * 1000000);
+        } else {
+            time_finish = (unsigned long) (t * 1000);
         }
     }
 
+    void restart() {
+        set(time_finish);
+    }
+
+    // void setIfTurnedOff(float t) {
+    //     if (is_turned_off) {
+    //         set(t);
+    //     }
+    // }
+
+    // void restartIfTurnedOff() {
+    //     if (is_turned_off) {
+    //         restart();
+    //     }
+    // }
+
+
+
     // Returns whether the time has elapsed
-    bool timeOut() {
-        if (checkTime() >= time_start + time_finish) {
+    bool isRinging() {
+        if (checkTimeLeft() <= 0.0 ) {
             return true;
         } else {
             return false;
         }
+    }
+
+    void stopRinging() {
+        is_turned_off = true;
+    }
+
+    bool isTickingDown() {
+        return !is_turned_off;
     }
 
     float dt() {
@@ -54,6 +83,10 @@ struct Timer {
         } else {
             return (checkTime() - time_start) / 1000.0;
         }
+    }
+
+    float checkTimeLeft() {
+        return (time_start + time_finish - checkTime());
     }
 };
 

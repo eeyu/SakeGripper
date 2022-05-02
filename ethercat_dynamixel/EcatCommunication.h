@@ -27,8 +27,8 @@ struct EcatCommandInfo {
             nCommand = 0;
         }
         command = static_cast<EcatCommandSignal>(nCommand);
-        position = constrain(nPosition, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
-        torque = constrain(nTorque, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
+        position = constrain(nPosition, GRIPPER_RESOLUTION_MIN, ECAT_RESOLUTION);
+        torque = constrain(nTorque, GRIPPER_RESOLUTION_MIN, ECAT_RESOLUTION);
     }
 };
 
