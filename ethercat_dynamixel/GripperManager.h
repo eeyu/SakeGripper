@@ -4,6 +4,7 @@
 #include "GripperController.h"
 #include "Parameters.h"
 #include <DynamixelShield.h>
+#include "Side.h"
 
 // Class for 2 grippers on 1 dynamixel shield
 // takes in an ethercat command and executes gripper actions accordingly
@@ -11,14 +12,14 @@
 class GripperManager {
 private:
     // Making lists on arduino is inconvenient
-    GripperController gripper1;
-    GripperController gripper2;
+    GripperController gripperLeft;
+    GripperController gripperRight;
     DynamixelShield dxl;
     Timer dxl_timer;
-    EcatCommandInfo g1EcatCommandInfo = EcatCommandInfo();
-    EcatCommandInfo g2EcatCommandInfo = EcatCommandInfo();
-    EcatReplyInfo g1EcatReplyInfo = EcatReplyInfo();
-    EcatReplyInfo g2EcatReplyInfo = EcatReplyInfo();
+    EcatCommandInfo leftEcatCommandInfo = EcatCommandInfo();
+    EcatCommandInfo rightEcatCommandInfo = EcatCommandInfo();
+    EcatReplyInfo leftEcatReplyInfo = EcatReplyInfo();
+    EcatReplyInfo rightEcatReplyInfo = EcatReplyInfo();
 
 public:
     GripperManager() {    
@@ -29,42 +30,42 @@ public:
         DEBUG_SERIAL.println("gripper initialized");
         dxl.begin(DXL_BAUD_RATE);
         dxl.setPortProtocolVersion(DXL_PROTOCOL_VERSION);
-        gripper1 = GripperController(GRIPPER1_DXL_ID, &dxl);
-        gripper2 = GripperController(GRIPPER2_DXL_ID, &dxl);
-        gripper1.setZero(DEFAULT_GRIPPER1_ZERO);
-        gripper2.setZero(DEFAULT_GRIPPER2_ZERO);
+        gripperLeft = GripperController(LEFT_DXL_ID, &dxl);
+        gripperRight = GripperController(RIGHT_DXL_ID, &dxl);
+        gripperLeft.setZero(DEFAULT_LEFT_ZERO);
+        gripperRight.setZero(DEFAULT_RIGHT_ZERO);
         dxl_timer.set(0.01);
     }
 
-    void sendEcatCommandToGripper(EcatCommandInfo necatCommandInfo, int id) {
-        if (id == 1)
+    void sendEcatCommandToGripper(EcatCommandInfo necatCommandInfo, Side side) {
+        if (side == LEFT)
         {
-            g1EcatCommandInfo = necatCommandInfo;
+            leftEcatCommandInfo = necatCommandInfo;
         }
         else 
         {
-            g2EcatCommandInfo = necatCommandInfo;
+            rightEcatCommandInfo = necatCommandInfo;
         }
     }
 
-    EcatReplyInfo getEcatReplyInfoForGripper(int id) {
-        if (id == 1)
+    EcatReplyInfo getEcatReplyInfoForGripper(Side side) {
+        if (side == LEFT)
         {
-            return g1EcatReplyInfo;
+            return leftEcatReplyInfo;
         }
-        return g2EcatReplyInfo;
+        return rightEcatReplyInfo;
         
     }
 
     void operate() {
-        gripper1.sendEcatCommand(g1EcatCommandInfo);
-        gripper2.sendEcatCommand(g2EcatCommandInfo);
+        gripperLeft.sendEcatCommand(leftEcatCommandInfo);
+        gripperRight.sendEcatCommand(rightEcatCommandInfo);
 
-        gripper1.doControl();
-        gripper2.doControl();
+        gripperLeft.doControl();
+        gripperRight.doControl();
 
-        g1EcatReplyInfo = gripper1.getReplyInfo();
-        g2EcatReplyInfo = gripper2.getReplyInfo();
+        leftEcatReplyInfo = gripperLeft.getReplyInfo();
+        rightEcatReplyInfo = gripperRight.getReplyInfo();
     }
 
 };

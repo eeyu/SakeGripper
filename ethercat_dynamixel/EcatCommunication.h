@@ -27,14 +27,17 @@ struct EcatCommandInfo {
             nCommand = 0;
         }
         command = static_cast<EcatCommandSignal>(nCommand);
-        position = constrain(nPosition, GRIPPER_RESOLUTION_MIN, ECAT_RESOLUTION);
-        torque = constrain(nTorque, GRIPPER_RESOLUTION_MIN, ECAT_RESOLUTION);
+        position = constrain(nPosition, 0, ECAT_RESOLUTION);
+        torque = constrain(nTorque, 0, ECAT_RESOLUTION);
     }
 };
 
 struct EcatReplyInfo {
     uint8_t busy;
     uint8_t position;
+    uint8_t torque;
+    uint8_t temperature;
+    uint8_t error;
 };
 
 #endif

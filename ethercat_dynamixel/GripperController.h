@@ -31,17 +31,12 @@ public:
     }
 
     EcatReplyInfo getReplyInfo() {
-        ecatReplyInfo.busy = isBusy();
-        ecatReplyInfo.position = getPosition();
+        ecatReplyInfo.busy = llGripper.isBusy();
+        ecatReplyInfo.position = convertRatioToEcat(llGripper.getPositionRatio());
+        ecatReplyInfo.torque = convertRatioToEcat(llGripper.getTorqueRatioMagnitude());
+        ecatReplyInfo.temperature = llGripper.getTemperature();
+        ecatReplyInfo.error = llGripper.getError();
         return ecatReplyInfo;
-    }
-
-    int isBusy() {
-        return llGripper.isBusy();
-    }
-
-    double getPosition() {
-        return llGripper.getPosition();
     }
 
     void doControl() {
@@ -56,9 +51,14 @@ public:
         lastCommandSignal = ecatCommandInfo.command;
     }
 
-    float convertEcatToPercent(int ecatValue) {
+    float convertEcatToRatio(int ecatValue) {
         float percent = (1.0 * ecatValue) / ECAT_RESOLUTION;
         return fconstrain(percent, 0.0, 1.0);
+    }
+
+    int convertRatioToEcat(float ratio) {
+        int value = (int) (ratio * ECAT_RESOLUTION);
+        return fconstrain(value, 0, ECAT_RESOLUTION);
     }
 
     void setZero(int zero) {
@@ -75,8 +75,8 @@ private:
                 llGripper.calibrate();
                 break;
             case GOTO:
-                positionRatio = convertEcatToPercent(ecatCommandInfo.position);
-                torqueRatio = convertEcatToPercent(ecatCommandInfo.torque);
+                positionRatio = convertEcatToRatio(ecatCommandInfo.position);
+                torqueRatio = convertEcatToRatio(ecatCommandInfo.torque);
                 llGripper.gotoPositionWithTorque(positionRatio, torqueRatio);
                 DEBUG_SERIAL.println("execute goto");
                 break;
@@ -89,7 +89,7 @@ private:
                 DEBUG_SERIAL.println("execute open");
                 break;
             case SET_TORQUE:
-                torqueRatio = convertEcatToPercent(ecatCommandInfo.torque);
+                torqueRatio = convertEcatToRatio(ecatCommandInfo.torque);
                 llGripper.setTorque(torqueRatio);
                 DEBUG_SERIAL.println("execute open");
                 break;

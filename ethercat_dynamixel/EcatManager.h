@@ -5,17 +5,17 @@
 #include "GripperECAT.h"
 #include "EasyCAT.h"                // EasyCAT library to interface the LAN9252
 #include "Timer.h"
+#include "Side.h"
 
 
 class EcatManager {
 private:
     EasyCAT EASYCAT;            
-    // Timer ecat_timer;
 
-    EcatCommandInfo g1EcatCommandInfo = EcatCommandInfo();
-    EcatCommandInfo g2EcatCommandInfo = EcatCommandInfo();
-    EcatReplyInfo g1EcatReplyInfo = EcatReplyInfo();
-    EcatReplyInfo g2EcatReplyInfo = EcatReplyInfo();
+    EcatCommandInfo leftEcatCommandInfo = EcatCommandInfo();
+    EcatCommandInfo rightEcatCommandInfo = EcatCommandInfo();
+    EcatReplyInfo leftEcatReplyInfo = EcatReplyInfo();
+    EcatReplyInfo rightEcatReplyInfo = EcatReplyInfo();
 
 public:
     EcatManager() {
@@ -30,46 +30,47 @@ public:
         } else {                                                               
             DEBUG_SERIAL.print ("initialization failed");                        
         }
-        // ecat_timer.usePrecision();
-        // ecat_timer.set(0.001);
     }
 
     void operate() {
         EASYCAT.MainTask();
-//        if (ecat_timer.timeOut())                    
-//        {                                                     
-        // ecat_timer.restart();
 
-        g1EcatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.g1Command,
-                                            EASYCAT.BufferOut.Cust.g1Position,
-                                            EASYCAT.BufferOut.Cust.g1Torque);
-        g2EcatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.g2Command,
-                                            EASYCAT.BufferOut.Cust.g2Position,
-                                            EASYCAT.BufferOut.Cust.g2Torque);
+        leftEcatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.leftCommand,
+                                            EASYCAT.BufferOut.Cust.leftPosition,
+                                            EASYCAT.BufferOut.Cust.leftTorque);
+        rightEcatCommandInfo = EcatCommandInfo(EASYCAT.BufferOut.Cust.rightCommand,
+                                            EASYCAT.BufferOut.Cust.rightPosition,
+                                            EASYCAT.BufferOut.Cust.rightTorque);
 
-        EASYCAT.BufferIn.Cust.g1Busy = g1EcatReplyInfo.busy;
-        EASYCAT.BufferIn.Cust.g1Position = g1EcatReplyInfo.position;
-        EASYCAT.BufferIn.Cust.g2Busy = g2EcatReplyInfo.busy;
-        EASYCAT.BufferIn.Cust.g2Position = g2EcatReplyInfo.position;
-//        }
+        EASYCAT.BufferIn.Cust.leftBusy =        leftEcatReplyInfo.busy;
+        EASYCAT.BufferIn.Cust.leftPosition =    leftEcatReplyInfo.position;
+        EASYCAT.BufferIn.Cust.leftTorque =      leftEcatReplyInfo.torque;
+        EASYCAT.BufferIn.Cust.leftTemperature = leftEcatReplyInfo.temperature;
+        EASYCAT.BufferIn.Cust.leftError =       leftEcatReplyInfo.error;
+
+        EASYCAT.BufferIn.Cust.rightBusy =       rightEcatReplyInfo.busy;
+        EASYCAT.BufferIn.Cust.rightPosition =   rightEcatReplyInfo.position;
+        EASYCAT.BufferIn.Cust.rightTorque =     rightEcatReplyInfo.torque;
+        EASYCAT.BufferIn.Cust.rightTemperature = rightEcatReplyInfo.temperature;
+        EASYCAT.BufferIn.Cust.rightError =      rightEcatReplyInfo.error;
     }
 
-    EcatCommandInfo getEcatCommandInfoForGripper(int id) {
-        if (id == 1)
+    EcatCommandInfo getEcatCommandInfoForGripper(Side side) {
+        if (side == LEFT)
         {
-            return g1EcatCommandInfo;
+            return leftEcatCommandInfo;
         }
-        return g2EcatCommandInfo;
+        return rightEcatCommandInfo;
     }
 
-    void setEcatReplyInfoForGripper(EcatReplyInfo necatReplyInfo, int id) {
-        if (id == 1)
+    void setEcatReplyInfoForGripper(EcatReplyInfo necatReplyInfo, Side side) {
+        if (side == LEFT)
         {
-            g1EcatReplyInfo = necatReplyInfo;
+            leftEcatReplyInfo = necatReplyInfo;
         }
         else 
         {
-            g2EcatReplyInfo = necatReplyInfo;
+            rightEcatReplyInfo = necatReplyInfo;
         }
         
     }

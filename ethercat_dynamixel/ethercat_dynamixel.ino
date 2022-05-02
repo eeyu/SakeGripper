@@ -8,6 +8,7 @@ const int DEBUG_BAUD = 9600; // 115200 doesn't work
 #include "Timer.h"
 
 #define CUSTOM
+#include "Side.h"
 #include "Parameters.h"
 #include "GripperManager.h"
 #include "EcatManager.h"
@@ -29,15 +30,15 @@ void setup()
 void loop()                                            
 {                                                     
     ecatManager.operate();
-    EcatCommandInfo g1Command = ecatManager.getEcatCommandInfoForGripper(1);
-    EcatCommandInfo g2Command = ecatManager.getEcatCommandInfoForGripper(2);
+    EcatCommandInfo leftCommand = ecatManager.getEcatCommandInfoForGripper(Side::LEFT);
+    EcatCommandInfo rightCommand = ecatManager.getEcatCommandInfoForGripper(Side::RIGHT);
 
-    gripperManager.sendEcatCommandToGripper(g1Command, 1);
-    gripperManager.sendEcatCommandToGripper(g2Command, 2);
+    gripperManager.sendEcatCommandToGripper(leftCommand, Side::LEFT);
+    gripperManager.sendEcatCommandToGripper(rightCommand, Side::RIGHT);
     gripperManager.operate();
-    EcatReplyInfo g1Reply = gripperManager.getEcatReplyInfoForGripper(1);
-    EcatReplyInfo g2Reply = gripperManager.getEcatReplyInfoForGripper(2);
+    EcatReplyInfo leftReply = gripperManager.getEcatReplyInfoForGripper(Side::LEFT);
+    EcatReplyInfo rightReply = gripperManager.getEcatReplyInfoForGripper(Side::RIGHT);
     
-    ecatManager.setEcatReplyInfoForGripper(g1Reply, 1);
-    ecatManager.setEcatReplyInfoForGripper(g2Reply, 2);
+    ecatManager.setEcatReplyInfoForGripper(leftReply, Side::LEFT);
+    ecatManager.setEcatReplyInfoForGripper(rightReply, Side::RIGHT);
 }

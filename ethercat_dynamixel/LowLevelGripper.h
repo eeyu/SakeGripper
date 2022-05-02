@@ -142,7 +142,7 @@ public:
     void setZero(int zero) {
         zero_position = zero;
     }
-    
+
     void gotoPositionWithTorque(float positionRatio, float torqueRatio) { 
         int position = convertRatioToRawDynamixel(positionRatio, RAW_MAX_OPEN_POSITION);
         int torque = convertRatioToRawDynamixel(torqueRatio, RAW_MAX_TORQUE);
@@ -178,13 +178,22 @@ public:
         return dxl->readControlTableItem(ControlTableItem::PRESENT_TEMPERATURE, dxl_id);
     }
 
-    int getPosition() {
+    float getPositionRatio() {
         int rawServoPosition = getRawAbsolutePosition() - zero_position;
         return convertRawDynamixelToRatio(rawServoPosition, RAW_MAX_OPEN_POSITION);
     }
 
+    float getTorqueRatioMagnitude() {
+        int rawTorque = abs(getRawMeasuredTorque());
+        return convertRawDynamixelToRatio(rawTorque, RAW_MAX_TORQUE);
+    }
+
     bool isBusy() {
         return is_busy;
+    }
+
+    int getError() {
+        return 0; // placeholder. for now it does nothing
     }
 
 private:
