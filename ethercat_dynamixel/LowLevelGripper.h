@@ -50,13 +50,11 @@ public:
     }
 
     void operate() {
-        if (calibration_timer.isTickingDown()) 
+        // DEBUG_SERIAL.println(calibration_timer.checkTimeLeft());
+        if (calibration_timer.isRinging()) 
         {
-            if (calibration_timer.isRinging()) 
-            {
-                finishCalibration();
-            }
-        } 
+            finishCalibration();
+        }
         else 
         {
             if (check_motion_timer.isRinging()) 
@@ -65,8 +63,9 @@ public:
                 check_motion_timer.restart();
             }
         }
-
-        performSafetyChecks();
+        if (!calibration_timer.isTickingDown()) {
+            performSafetyChecks();
+        }
     }
 
 private:
@@ -76,26 +75,31 @@ private:
         {
             is_busy = false;
             reduceToSafeTorque();
+            // debugPrintln("No Motion Detected");
         }
 
         // if safe torque is exceeded for n seconds, reduce to safe torque
         if (!safeTorqueExceededTimer.isTickingDown() && torqueIsExceeded(RAW_SAFE_TORQUE)) 
         {
+            // debugPrint("Starting unsafe torque timer for n seconds: "); debugPrintln(String(SAFE_TORQUE_EXCEEDED_MAX_TIME));
             safeTorqueExceededTimer.set(SAFE_TORQUE_EXCEEDED_MAX_TIME);
         }
         if (safeTorqueExceededTimer.isRinging())
         {
             reduceToSafeTorque();
             safeTorqueExceededTimer.stopRinging();
+            // debugPrintln("Torque is above safe level for n seconds");
         }
         
         // if torque > 0 for m seconds, completely remove torque
         if (!nonzeroTorqueTimer.isTickingDown() && torqueIsExceeded(RAW_TORQUE_NOISE_MAGNITUDE)) 
         {
             nonzeroTorqueTimer.set(NONZERO_TORQUE_MAX_TIME);
+            // debugPrint("Starting nonzero torque timer for n seconds: "); debugPrintln(String(NONZERO_TORQUE_MAX_TIME));
         }
         if (nonzeroTorqueTimer.isRinging())
         {
+            // debugPrintln("Torque is nonzero for n seconds");
             removeTorque();
             nonzeroTorqueTimer.stopRinging();
         }
@@ -103,6 +107,7 @@ private:
         // if temperature > maximum, completely remove torque
         if (getTemperature() > maxTemperature) 
         {
+            // debugPrintln("Temperature Exceeded");
             removeTorque();
         }
     }
@@ -166,11 +171,13 @@ public:
 
     void reduceToSafeTorque() {
         setRawTorque(RAW_SAFE_TORQUE);
+        // debugPrintln("Reducing to safe torque");
     }
 
     void removeTorque() {
         setTorque(0);
         setTorqueMode(false);
+        // debugPrintln("Removing torque");
     }
 
 public:

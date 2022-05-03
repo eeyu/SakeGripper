@@ -1,5 +1,7 @@
 {
     "board": "arduino:avr:uno",
     "programmer": "arduino:avrisp",
-    "sketch": "ethercat_dynamixel.ino"
+    "sketch": "ethercat_dynamixel.ino",
+    "port": "COM4",
+    "output": "../ArduinoOutput"
 }

@@ -26,9 +26,9 @@ public:
         DEBUG_SERIAL.print ("\nEasyCAT - Generic EtherCAT slave\n");          // print the banner
                                                                     //---- initialize the EasyCAT board -----                                       
         if (EASYCAT.Init() == true){                                                               
-            DEBUG_SERIAL.print ("initialized");                                
+            DEBUG_SERIAL.println ("EasyCAT Initialized");                                
         } else {                                                               
-            DEBUG_SERIAL.print ("initialization failed");                        
+            DEBUG_SERIAL.println ("EasyCAT Initialization FAILED");                        
         }
     }
 

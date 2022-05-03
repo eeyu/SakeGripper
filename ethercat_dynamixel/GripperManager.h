@@ -15,7 +15,6 @@ private:
     GripperController gripperLeft;
     GripperController gripperRight;
     DynamixelShield dxl;
-    Timer dxl_timer;
     EcatCommandInfo leftEcatCommandInfo = EcatCommandInfo();
     EcatCommandInfo rightEcatCommandInfo = EcatCommandInfo();
     EcatReplyInfo leftEcatReplyInfo = EcatReplyInfo();
@@ -27,14 +26,25 @@ public:
     }
 
     void initialize() {  
-        DEBUG_SERIAL.println("gripper initialized");
+        DEBUG_SERIAL.println("Gripper Manager Initializing");
         dxl.begin(DXL_BAUD_RATE);
         dxl.setPortProtocolVersion(DXL_PROTOCOL_VERSION);
+
+        if (dxl.ping(LEFT_DXL_ID) == true) {
+            DEBUG_SERIAL.println("Left Gripper Found");
+        } else {
+            DEBUG_SERIAL.println("Left Gripper NOT Found");
+        }
+        if (dxl.ping(RIGHT_DXL_ID) == true) {
+            DEBUG_SERIAL.println("Right Gripper Found");
+        } else {
+            DEBUG_SERIAL.println("Right Gripper NOT Found");
+        }
+
         gripperLeft = GripperController(LEFT_DXL_ID, &dxl);
         gripperRight = GripperController(RIGHT_DXL_ID, &dxl);
         gripperLeft.setZero(DEFAULT_LEFT_ZERO);
         gripperRight.setZero(DEFAULT_RIGHT_ZERO);
-        dxl_timer.set(0.01);
     }
 
     void sendEcatCommandToGripper(EcatCommandInfo necatCommandInfo, Side side) {

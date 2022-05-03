@@ -11,58 +11,67 @@
 // Interaction is always in seconds
 struct Timer {
 private:
-    unsigned long time_start;
-    unsigned long time_finish;
-    unsigned long (*checkTime)();
+    unsigned long timeStartAbs; // in appropriate unit
+    float periodSec;
+    unsigned long periodUnit;
+    unsigned long (*checkTimeAbs)();
     bool using_precision;
 
-    bool is_turned_off;
+    bool isTicking;
 public:
-    Timer(unsigned long ntime_finish=0) {
-        checkTime = millis;
+    // time finish in seconds
+    Timer(float ntime_finish=0) {
+        checkTimeAbs = millis;
+        timeStartAbs = checkTimeAbs();
         using_precision = false;
-        is_turned_off = true;
-        set(ntime_finish);   
+        isTicking = false;
+
+        setPeriodInSec(ntime_finish);
     }
 
     void usePrecision()  {
-        checkTime = micros;
-        is_turned_off = false;
+        checkTimeAbs = micros;
         using_precision = true;
-        restart();
+        periodUnit = convertSecToUnit(periodSec);
     }
 
-    // Starts the timer to run for t ms.
-    void set(float t) {
-        time_start = checkTime();
+private: 
+    unsigned long convertSecToUnit(float t) {
         if (using_precision) {
-            time_finish = (unsigned long) (t * 1000000);
+            return (unsigned long) (t * 1000000);
         } else {
-            time_finish = (unsigned long) (t * 1000);
+            return (unsigned long) (t * 1000);
         }
     }
 
-    void restart() {
-        set(time_finish);
+    float convertUnitToSec(unsigned long t) {
+        if (using_precision) {
+            return t / 1000000.0;
+        } else {
+            return t / 1000.0;
+        }
     }
 
-    // void setIfTurnedOff(float t) {
-    //     if (is_turned_off) {
-    //         set(t);
-    //     }
-    // }
+    void setPeriodInSec(float s) {
+        periodSec = s;
+        periodUnit = convertSecToUnit(periodSec);
+    }
 
-    // void restartIfTurnedOff() {
-    //     if (is_turned_off) {
-    //         restart();
-    //     }
-    // }
+public:
+    // Starts the timer to run for t ms.
+    void set(float t) {
+        timeStartAbs = checkTimeAbs();
+        setPeriodInSec(t);
+        isTicking = true;
+    }
 
-
+    void restart() {
+        set(periodSec);
+    }
 
     // Returns whether the time has elapsed
     bool isRinging() {
-        if (checkTimeLeft() <= 0.0 ) {
+        if (checkTimeLeftUnit() <= 0.0 && isTickingDown()) {
             return true;
         } else {
             return false;
@@ -70,23 +79,29 @@ public:
     }
 
     void stopRinging() {
-        is_turned_off = true;
+        isTicking = false;
     }
 
     bool isTickingDown() {
-        return !is_turned_off;
+        return isTicking;
     }
 
     float dt() {
         if (using_precision) {
-            return (checkTime() - time_start) / 1000000.0;
+            return (checkTimeAbs() - timeStartAbs) / 1000000.0;
         } else {
-            return (checkTime() - time_start) / 1000.0;
+            return (checkTimeAbs() - timeStartAbs) / 1000.0;
         }
     }
 
-    float checkTimeLeft() {
-        return (time_start + time_finish - checkTime());
+private:
+    float checkTimeLeftUnit() {
+        return (timeStartAbs + periodUnit - checkTimeAbs());
+    }
+
+public:
+    float checkTimeLeftSec() {
+        return convertUnitToSec(checkTimeLeftUnit());
     }
 };
 

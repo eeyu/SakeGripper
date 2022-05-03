@@ -3,8 +3,7 @@
 
 const uint8_t LEFT_DXL_ID = 1;
 const uint8_t RIGHT_DXL_ID = 2;
-// const float DXL_PROTOCOL_VERSION = 1.0;
-// const float DXL_BAUD_RATE = 57142;
+
 const float DXL_PROTOCOL_VERSION = 1.0;
 const float DXL_BAUD_RATE = 57600;
 
