@@ -18,8 +18,8 @@
             "includePath": [
                 "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\cores\\arduino",
                 "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\variants\\standard",
-                "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\SoftwareSerial\\src",
                 "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\SPI\\src",
+                "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\SoftwareSerial\\src",
                 "C:\\Users\\eyu\\Documents\\Arduino\\libraries\\DynamixelShield-master\\src",
                 "C:\\Users\\eyu\\Documents\\Arduino\\libraries\\Dynamixel2Arduino-master\\src",
                 "C:\\Users\\eyu\\Documents\\Arduino\\libraries\\EasyCAT_V2_0",

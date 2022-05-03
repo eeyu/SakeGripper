@@ -1,6 +1,12 @@
 #ifndef __PARAMETERS__
 #define __PARAMETERS__
 
+// This is for debugging
+#include <SoftwareSerial.h>
+SoftwareSerial soft_serial(7, 8); // DYNAMIXELShield UART RX/TX
+#define DEBUG_SERIAL soft_serial
+const int DEBUG_BAUD = 9600; // 115200 doesn't work
+
 const uint8_t LEFT_DXL_ID = 1;
 const uint8_t RIGHT_DXL_ID = 2;
 

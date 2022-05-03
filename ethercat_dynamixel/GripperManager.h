@@ -30,17 +30,6 @@ public:
         dxl.begin(DXL_BAUD_RATE);
         dxl.setPortProtocolVersion(DXL_PROTOCOL_VERSION);
 
-        if (dxl.ping(LEFT_DXL_ID) == true) {
-            DEBUG_SERIAL.println("Left Gripper Found");
-        } else {
-            DEBUG_SERIAL.println("Left Gripper NOT Found");
-        }
-        if (dxl.ping(RIGHT_DXL_ID) == true) {
-            DEBUG_SERIAL.println("Right Gripper Found");
-        } else {
-            DEBUG_SERIAL.println("Right Gripper NOT Found");
-        }
-
         gripperLeft = GripperController(LEFT_DXL_ID, &dxl);
         gripperRight = GripperController(RIGHT_DXL_ID, &dxl);
         gripperLeft.setZero(DEFAULT_LEFT_ZERO);
@@ -76,6 +65,25 @@ public:
 
         leftEcatReplyInfo = gripperLeft.getReplyInfo();
         rightEcatReplyInfo = gripperRight.getReplyInfo();
+    }
+
+    void ping(Side side) {
+        int id;
+        if (side == LEFT) {
+            id = LEFT_DXL_ID;
+        } else {
+            id = RIGHT_DXL_ID;
+        }
+
+        DEBUG_SERIAL.print("Protocol: "); DEBUG_SERIAL.println(dxl.getPortProtocolVersion());
+        DEBUG_SERIAL.print("BAUD: "); DEBUG_SERIAL.println(dxl.getPortBaud());
+
+        dxl.ping(id);
+        if (dxl.ping(id) == true) {
+            DEBUG_SERIAL.print("Gripper Found: "); DEBUG_SERIAL.println(id);
+        } else {
+            DEBUG_SERIAL.print("Gripper NOT Found: "); DEBUG_SERIAL.println(id);
+        }
     }
 
 };
