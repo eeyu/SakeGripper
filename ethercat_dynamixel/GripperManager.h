@@ -29,11 +29,13 @@ public:
         DEBUG_SERIAL.println("gripper initialized");
         dxl.begin(DXL_BAUD_RATE);
         dxl.setPortProtocolVersion(DXL_PROTOCOL_VERSION);
+
         gripper1 = GripperController(GRIPPER1_DXL_ID, &dxl);
         gripper2 = GripperController(GRIPPER2_DXL_ID, &dxl);
         gripper1.setZero(DEFAULT_GRIPPER1_ZERO);
         gripper2.setZero(DEFAULT_GRIPPER2_ZERO);
         dxl_timer.reset(0.01);
+        DEBUG_SERIAL.println("Done");
     }
 
     void sendEcatCommandToGripper(EcatCommandInfo necatCommandInfo, int id) {
