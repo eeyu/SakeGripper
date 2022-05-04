@@ -10,50 +10,94 @@
 // Can be set to check milliseconds or microseconds.
 // Interaction is always in seconds
 struct Timer {
-    unsigned long time_start;
-    unsigned long time_finish;
-    unsigned long (*checkTime)();
+private:
+    long timeStartAbs; // in appropriate unit
+    float periodSec;
+    long periodUnit;
+    unsigned long (*checkTimeAbs)();
     bool using_precision;
 
-    Timer(unsigned long ntime_finish=0) {
-        checkTime = millis;
+    bool isTicking;
+public:
+    // time finish in seconds
+    Timer(float ntime_finish=0) {
+        checkTimeAbs = millis;
+        timeStartAbs = checkTimeAbs();
         using_precision = false;
-        reset(ntime_finish);   
+        isTicking = false;
+
+        setPeriodInSec(ntime_finish);
     }
 
     void usePrecision()  {
-        checkTime = micros;
+        checkTimeAbs = micros;
         using_precision = true;
-        reset();
+        periodUnit = convertSecToUnit(periodSec);
     }
 
-    // Starts the timer to run for t ms.
-    void reset(float t=0) {
-        time_start = checkTime();
-        if (t > 0) { // If t is unset, reset with existing time. Else, reset with new time
-            if (using_precision) {
-                time_finish = (unsigned long) (t * 1000000);
-            } else {
-                time_finish = (unsigned long) (t * 1000);
-            }
+private: 
+    long convertSecToUnit(float t) {
+        if (using_precision) {
+            return (long) (t * 1000000);
+        } else {
+            return (long) (t * 1000);
         }
     }
 
+    float convertUnitToSec(long t) {
+        if (using_precision) {
+            return t / 1000000.0;
+        } else {
+            return t / 1000.0;
+        }
+    }
+
+    void setPeriodInSec(float s) {
+        periodSec = s;
+        periodUnit = convertSecToUnit(periodSec);
+    }
+
+public:
+    // Starts the timer to run for t ms.
+    void set(float t) {
+        timeStartAbs = checkTimeAbs();
+        setPeriodInSec(t);
+        isTicking = true;
+    }
+
+    void restart() {
+        set(periodSec);
+    }
+
     // Returns whether the time has elapsed
-    bool timeOut() {
-        if (checkTime() >= time_start + time_finish) {
+    bool isRinging() {
+        if (checkTimeLeftUnit() <= 0.0 && isTickingDown()) {
             return true;
         } else {
             return false;
         }
     }
 
+    void stopRinging() {
+        isTicking = false;
+    }
+
+    bool isTickingDown() {
+        return isTicking;
+    }
+
     float dt() {
-        if (using_precision) {
-            return (checkTime() - time_start) / 1000000.0;
-        } else {
-            return (checkTime() - time_start) / 1000.0;
-        }
+        return convertUnitToSec(checkTimeAbs() - timeStartAbs);
+    }
+
+private:
+    float checkTimeLeftUnit() {
+        return (long) (timeStartAbs + periodUnit - checkTimeAbs());
+    }
+
+public:
+    float checkTimeLeftSec() {
+        return convertUnitToSec(checkTimeLeftUnit());
     }
 };
 

@@ -9,9 +9,9 @@ enum EcatCommandSignal {
     GOTO = 2,
     RELEASE = 3,
     OPEN = 4,
-    SET_TORQUE = 5
+    CLEAR_ERROR = 5
 };
-#define MAX_SIGNAL_VAL 4
+#define MAX_SIGNAL_VAL 5
 
 struct EcatCommandInfo {
     EcatCommandSignal command;
@@ -27,14 +27,17 @@ struct EcatCommandInfo {
             nCommand = 0;
         }
         command = static_cast<EcatCommandSignal>(nCommand);
-        position = constrain(nPosition, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
-        torque = constrain(nTorque, GRIPPER_RESOLUTION_MIN, GRIPPER_RESOLUTION_MAX);
+        position = constrain(nPosition, 0, ECAT_RESOLUTION);
+        torque = constrain(nTorque, 0, ECAT_RESOLUTION);
     }
 };
 
 struct EcatReplyInfo {
     uint8_t busy;
     uint8_t position;
+    uint8_t torque;
+    uint8_t temperature;
+    uint8_t error;
 };
 
 #endif

@@ -7,11 +7,14 @@
 #include "Timer.h"
 #include "EcatCommunication.h"
 #include "LowLevelGripper.h"
+#include "MathUtil.h"
+
+// Manages single gripper. Ties together ecat and dynamixel
 
 class GripperController {
 private:
     LowLevelGripper llGripper;
-    EcatCommandSignal lastCommandSignal = 0;
+    EcatCommandSignal lastCommandSignal = WAITING;
     EcatCommandInfo ecatCommandInfo = EcatCommandInfo();
     EcatReplyInfo ecatReplyInfo = EcatReplyInfo();
 
@@ -28,23 +31,15 @@ public:
     }
 
     EcatReplyInfo getReplyInfo() {
-        ecatReplyInfo.busy = isBusy();
-        ecatReplyInfo.position = getPosition();
+        ecatReplyInfo.busy = llGripper.isBusy();
+        ecatReplyInfo.position = convertRatioToEcat(llGripper.getPositionRatio());
+        ecatReplyInfo.torque = convertRatioToEcat(llGripper.getTorqueRatioMagnitude());
+        ecatReplyInfo.temperature = llGripper.getTemperature();
+        ecatReplyInfo.error = llGripper.getError();
         return ecatReplyInfo;
     }
 
-    int isBusy() {
-        return llGripper.isBusy();
-    }
-
-    double getPosition() {
-        return llGripper.getPosition();
-    }
-
     void doControl() {
-        if (llGripper.exceededOperationalSafetyChecks()) {
-            llGripper.release();
-        }
         llGripper.operate();
         bool newCommandWasSent = (lastCommandSignal != ecatCommandInfo.command) 
             && (ecatCommandInfo.command != EcatCommandSignal::WAITING);
@@ -56,32 +51,49 @@ public:
         lastCommandSignal = ecatCommandInfo.command;
     }
 
+    float convertEcatToRatio(int ecatValue) {
+        float percent = (1.0 * ecatValue) / ECAT_RESOLUTION;
+        return fconstrain(percent, 0.0, 1.0);
+    }
+
+    int convertRatioToEcat(float ratio) {
+        int value = (int) (ratio * ECAT_RESOLUTION);
+        return fconstrain(value, 0, ECAT_RESOLUTION);
+    }
+
     void setZero(int zero) {
         llGripper.setZero(zero);
     }
 
+    float getPosition() {
+        return llGripper.getPositionRatio();
+    }
+
 private:
     void executeCommand(EcatCommandInfo ecatCommandInfo) {
+        float positionRatio;
+        float torqueRatio;
         switch (ecatCommandInfo.command) {
             case CALIBRATE:
-                DEBUG_SERIAL.println("execute calibrate");
+                // DEBUG_SERIAL.println("\nexecute calibrate");
                 llGripper.calibrate();
                 break;
             case GOTO:
-                llGripper.gotoPositionWithTorque(ecatCommandInfo.position, ecatCommandInfo.torque);
-                DEBUG_SERIAL.println("execute goto");
+                positionRatio = convertEcatToRatio(ecatCommandInfo.position);
+                torqueRatio = convertEcatToRatio(ecatCommandInfo.torque);
+                llGripper.setDesiredPositionAndTorque(positionRatio, torqueRatio);
+                // DEBUG_SERIAL.println("\nexecute goto");
                 break;
             case RELEASE:
-                llGripper.release();
-                DEBUG_SERIAL.println("execute release");
+                llGripper.removeTorque();
+                DEBUG_SERIAL.println("\nexecute release");
                 break;
             case OPEN:
                 llGripper.open();
-                DEBUG_SERIAL.println("execute open");
+                // DEBUG_SERIAL.println("\nexecute open");
                 break;
-            case SET_TORQUE:
-                llGripper.setTorque(ecatCommandInfo.torque);
-                DEBUG_SERIAL.println("execute open");
+            case CLEAR_ERROR:
+                llGripper.clearErrorAndResetLimit();
                 break;
             default:
                 break;

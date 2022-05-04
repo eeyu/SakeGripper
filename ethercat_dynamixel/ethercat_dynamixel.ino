@@ -1,37 +1,55 @@
 #include <SPI.h>                    // SPI library
 #include "Timer.h"
 
+// #define TESTING
+
+#ifdef TESTING
+#include "hourglassTest.h"
+#endif
+
 #define CUSTOM
+#include "Side.h"
 #include "Parameters.h"
 #include "GripperManager.h"
 #include "EcatManager.h"
 #include "EcatCommunication.h"
+#include <DynamixelShield.h>
+
 
 GripperManager gripperManager;
 EcatManager ecatManager;
+DynamixelShield dxl;
+
  
 void setup()
 {
+    #ifndef TESTING
     DEBUG_SERIAL.begin(DEBUG_BAUD);
-    DEBUG_SERIAL.println("starting");
+    DEBUG_SERIAL.println("\n--------Starting---------");
+
     gripperManager = GripperManager();
-    gripperManager.initialize();
+    gripperManager.initialize(&dxl);
     ecatManager = EcatManager();  
     ecatManager.initialize();
+    #else
+    testHourglass();
+    #endif
 }
 
 void loop()                                            
-{                                                     
+{        
+    #ifndef TESTING                                             
     ecatManager.operate();
-    EcatCommandInfo g1Command = ecatManager.getEcatCommandInfoForGripper(1);
-    EcatCommandInfo g2Command = ecatManager.getEcatCommandInfoForGripper(2);
+    EcatCommandInfo leftCommand = ecatManager.getEcatCommandInfoForGripper(Side::LEFT);
+    EcatCommandInfo rightCommand = ecatManager.getEcatCommandInfoForGripper(Side::RIGHT);
 
-    gripperManager.sendEcatCommandToGripper(g1Command, 1);
-    gripperManager.sendEcatCommandToGripper(g2Command, 2);
+    gripperManager.sendEcatCommandToGripper(leftCommand, Side::LEFT);
+    gripperManager.sendEcatCommandToGripper(rightCommand, Side::RIGHT);
     gripperManager.operate();
-    EcatReplyInfo g1Reply = gripperManager.getEcatReplyInfoForGripper(1);
-    EcatReplyInfo g2Reply = gripperManager.getEcatReplyInfoForGripper(2);
+    EcatReplyInfo leftReply = gripperManager.getEcatReplyInfoForGripper(Side::LEFT);
+    EcatReplyInfo rightReply = gripperManager.getEcatReplyInfoForGripper(Side::RIGHT);
     
-    ecatManager.setEcatReplyInfoForGripper(g1Reply, 1);
-    ecatManager.setEcatReplyInfoForGripper(g2Reply, 2);
+    ecatManager.setEcatReplyInfoForGripper(leftReply, Side::LEFT);
+    ecatManager.setEcatReplyInfoForGripper(rightReply, Side::RIGHT);
+    #endif
 }
