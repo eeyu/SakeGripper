@@ -35,6 +35,7 @@ private:
 
     int desiredTorqueLimit = RAW_MAX_TORQUE;
     int desiredTorque = 0;
+    int desiredPosition = 0;
 
     GripperError error = NONE;
 
@@ -67,17 +68,16 @@ public:
         if (printTimer.isRinging()) {
             printTimer.restart();
             DEBUG_SERIAL.println(" ----");
-            // DEBUG_SERIAL.print(String(" Meas_Torque ") + getRawMeasuredTorque());
             DEBUG_SERIAL.print(String(" _DT ") +getRawDesiredTorque());
             DEBUG_SERIAL.print(String(" _LT ") +getRawTorqueLimit());
             DEBUG_SERIAL.print(String(" _MT ") +getRawMeasuredTorque());
 
             DEBUG_SERIAL.print(String(" Des_T ") +desiredTorque);
             DEBUG_SERIAL.print(String(" Lim_T ") +desiredTorqueLimit);
-            // DEBUG_SERIAL.print(String(" MeasTorque ") +getRawMeasuredTorque());
             DEBUG_SERIAL.print(String(" HGST ") + safeTorqueExceededHourglass.getTimeLeftForwardSec());
             DEBUG_SERIAL.print(String(" HG0T ") + nonzeroTorqueHourglass.getTimeLeftForwardSec());
             DEBUG_SERIAL.print(String(" Err ") + error);
+            DEBUG_SERIAL.print(String(" Tmp ") +getTemperature());
         }
         if (calibration_timer.isTickingDown()) 
         {
@@ -90,7 +90,7 @@ public:
         else 
         {
             performSafetyChecks();
-            sendDesiredTorqueToDynamixel();
+            sendDesiredsToDynamixel();
         }
         if (check_motion_timer.isRinging()) 
         {
@@ -172,10 +172,25 @@ private:
     }
 
     // anything that alters torque should use this method
-    void sendDesiredTorqueToDynamixel() {
+    void sendDesiredsToDynamixel() {
         int torque = constrain(desiredTorque, 0, desiredTorqueLimit);
-        dxl->writeControlTableItem(ControlTableItem::TORQUE_LIMIT, dxl_id, torque);
-        dxl->writeControlTableItem(ControlTableItem::GOAL_TORQUE, dxl_id, (unsigned short)(1024+torque));
+        
+        if (torque == 0)
+        {
+            dxl->writeControlTableItem(ControlTableItem::TORQUE_ENABLE, dxl_id, 0);
+        }
+        else
+        {
+            dxl->writeControlTableItem(ControlTableItem::TORQUE_LIMIT, dxl_id, torque);
+            dxl->writeControlTableItem(ControlTableItem::GOAL_TORQUE, dxl_id, (unsigned short)(1024+torque));
+
+            if (desiredPosition == 0) {
+                closeWithTorque();
+            } else {
+                gotoRawPosition(desiredPosition);
+            }
+        }
+
     }
 
 public:
@@ -210,20 +225,16 @@ public:
         zero_position = zero;
     }
 
-    void gotoPositionWithTorque(float positionRatio, float torqueRatio) { 
+    void setDesiredPositionAndTorque(float positionRatio, float torqueRatio) { 
         int position = convertRatioToRawDynamixel(positionRatio, RAW_MAX_OPEN_POSITION);
         int torque = convertRatioToRawDynamixel(torqueRatio, RAW_MAX_TORQUE);
         
         desiredTorque = torque;
-        if (position == 0) {
-            closeWithTorque();
-        } else {
-            gotoRawPosition(position);
-        }
+        desiredPosition = position;
     }
 
     void open() {
-        gotoPositionWithTorque(1.0, 1.0);
+        setDesiredPositionAndTorque(1.0, 1.0);
     }
 
     void setTorque(float torqueRatio) {

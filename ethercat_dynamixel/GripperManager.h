@@ -73,33 +73,11 @@ public:
         gripperRight.sendEcatCommand(rightEcatCommandInfo);
 
         gripperLeft.doControl();
-        // gripperRight.doControl();
-
-        // DEBUG_SERIAL.println(gripperLeft.getPosition());
+        gripperRight.doControl();
 
         leftEcatReplyInfo = gripperLeft.getReplyInfo();
         rightEcatReplyInfo = gripperRight.getReplyInfo();
     }
-
-    // void ping(Side side) {
-    //     int id;
-    //     if (side == LEFT) {
-    //         id = LEFT_DXL_ID;
-    //     } else {
-    //         id = RIGHT_DXL_ID;
-    //     }
-
-    //     DEBUG_SERIAL.print("Protocol: "); DEBUG_SERIAL.println(dxl->getPortProtocolVersion());
-    //     DEBUG_SERIAL.print("BAUD: "); DEBUG_SERIAL.println(dxl->getPortBaud());
-
-    //     // dxl->ping(id);
-    //     if (dxl->ping(id) == true) {
-    //         DEBUG_SERIAL.print("Gripper Found: "); DEBUG_SERIAL.println(id);
-    //     } else {
-    //         DEBUG_SERIAL.print("Gripper NOT Found: "); DEBUG_SERIAL.println(id);
-    //     }
-    // }
-
 };
 
 #endif

@@ -81,12 +81,12 @@ private:
             case GOTO:
                 positionRatio = convertEcatToRatio(ecatCommandInfo.position);
                 torqueRatio = convertEcatToRatio(ecatCommandInfo.torque);
-                llGripper.gotoPositionWithTorque(positionRatio, torqueRatio);
+                llGripper.setDesiredPositionAndTorque(positionRatio, torqueRatio);
                 // DEBUG_SERIAL.println("\nexecute goto");
                 break;
             case RELEASE:
                 llGripper.removeTorque();
-                // DEBUG_SERIAL.println("\nexecute release");
+                DEBUG_SERIAL.println("\nexecute release");
                 break;
             case OPEN:
                 llGripper.open();
