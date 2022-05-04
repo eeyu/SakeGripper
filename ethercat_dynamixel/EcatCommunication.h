@@ -9,9 +9,9 @@ enum EcatCommandSignal {
     GOTO = 2,
     RELEASE = 3,
     OPEN = 4,
-    SET_TORQUE = 5
+    CLEAR_ERROR = 5
 };
-#define MAX_SIGNAL_VAL 4
+#define MAX_SIGNAL_VAL 5
 
 struct EcatCommandInfo {
     EcatCommandSignal command;

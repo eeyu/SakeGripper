@@ -5,6 +5,8 @@
 #include "Timer.h"
 #include "Parameters.h"
 #include "MathUtil.h"
+#include "GripperError.h"
+#include "Hourglass.h"
 
 // Manages dynamixel interaction for single gripper
 // TODO how much noise is in present load?
@@ -24,10 +26,17 @@ private:
     bool is_busy;
     Timer check_motion_timer;
     Timer calibration_timer;
-    Timer safeTorqueExceededTimer;
-    Timer nonzeroTorqueTimer;
+    Hourglass nonzeroTorqueHourglass;
+    Hourglass safeTorqueExceededHourglass;
+
+    Timer printTimer;
     int last_position = 10000;
     int maxTemperature;
+
+    int desiredTorqueLimit = RAW_MAX_TORQUE;
+    int desiredTorque = 0;
+
+    GripperError error = NONE;
 
 public:
     LowLevelGripper() {
@@ -42,80 +51,131 @@ public:
         is_busy = false;
         check_motion_timer.set(0.05);
 
-        setSingleResolution();
-        maxTemperature = dxl->readControlTableItem(ControlTableItem::TEMPERATURE_LIMIT, dxl_id);
+        safeTorqueExceededHourglass = Hourglass(SAFE_TORQUE_EXCEEDED_MAX_TIME);
+        nonzeroTorqueHourglass = Hourglass(NONZERO_TORQUE_MAX_TIME);
 
+        setSingleResolution();
+        // maxTemperature = dxl->readControlTableItem(ControlTableItem::TEMPERATURE_LIMIT, dxl_id);
+        maxTemperature = MAX_TEMPERATURE;
         // Safety check. Shuts down on torque, temperature errors
         dxl->writeControlTableItem(ControlTableItem::SHUTDOWN, dxl_id, 0x3D);
+
+        printTimer.set(1.0);
     }
 
     void operate() {
-        // DEBUG_SERIAL.println(calibration_timer.checkTimeLeft());
-        if (calibration_timer.isRinging()) 
+        if (printTimer.isRinging()) {
+            printTimer.restart();
+            DEBUG_SERIAL.println(" ----");
+            // DEBUG_SERIAL.print(String(" Meas_Torque ") + getRawMeasuredTorque());
+            DEBUG_SERIAL.print(String(" _DT ") +getRawDesiredTorque());
+            DEBUG_SERIAL.print(String(" _LT ") +getRawTorqueLimit());
+            DEBUG_SERIAL.print(String(" _MT ") +getRawMeasuredTorque());
+
+            DEBUG_SERIAL.print(String(" Des_T ") +desiredTorque);
+            DEBUG_SERIAL.print(String(" Lim_T ") +desiredTorqueLimit);
+            // DEBUG_SERIAL.print(String(" MeasTorque ") +getRawMeasuredTorque());
+            DEBUG_SERIAL.print(String(" HGST ") + safeTorqueExceededHourglass.getTimeLeftForwardSec());
+            DEBUG_SERIAL.print(String(" HG0T ") + nonzeroTorqueHourglass.getTimeLeftForwardSec());
+            DEBUG_SERIAL.print(String(" Err ") + error);
+        }
+        if (calibration_timer.isTickingDown()) 
         {
-            finishCalibration();
+            if (calibration_timer.isRinging()) 
+            {
+                finishCalibration();
+                calibration_timer.stopRinging();
+            }
         }
         else 
         {
-            if (check_motion_timer.isRinging()) 
-            {
-                last_position = getRawAbsolutePosition();
-                check_motion_timer.restart();
-            }
-        }
-        if (!calibration_timer.isTickingDown()) {
             performSafetyChecks();
+            sendDesiredTorqueToDynamixel();
+        }
+        if (check_motion_timer.isRinging()) 
+        {
+            last_position = getRawAbsolutePosition();
+            check_motion_timer.restart();
         }
     }
 
 private:
+    // Lower on chain is more severe error
     void performSafetyChecks() {
-        // if no motion is detected, reduce to safe torque
+        desiredTorqueLimit = RAW_MAX_TORQUE;
+        error = NONE;
+        // when no motion is detected, reduce to safe torque. 
         if (!isMoving()) 
         {
             is_busy = false;
-            reduceToSafeTorque();
-            // debugPrintln("No Motion Detected");
+            setTorqueLimitWithError(RAW_SAFE_TORQUE, SAFE_TORQUE_LIMIT);
         }
 
-        // if safe torque is exceeded for n seconds, reduce to safe torque
-        if (!safeTorqueExceededTimer.isTickingDown() && torqueIsExceeded(RAW_SAFE_TORQUE)) 
+        // if safe torque is exceeded for n cumulative seconds, send to timeout
+        // limit resets after timeout period
+        if (torqueIsExceeded(RAW_SAFE_TORQUE, true))
         {
-            // debugPrint("Starting unsafe torque timer for n seconds: "); debugPrintln(String(SAFE_TORQUE_EXCEEDED_MAX_TIME));
-            safeTorqueExceededTimer.set(SAFE_TORQUE_EXCEEDED_MAX_TIME);
+            safeTorqueExceededHourglass.runForward();
         }
-        if (safeTorqueExceededTimer.isRinging())
+        else
         {
-            reduceToSafeTorque();
-            safeTorqueExceededTimer.stopRinging();
-            // debugPrintln("Torque is above safe level for n seconds");
+            safeTorqueExceededHourglass.runBackward();
         }
-        
-        // if torque > 0 for m seconds, completely remove torque
-        if (!nonzeroTorqueTimer.isTickingDown() && torqueIsExceeded(RAW_TORQUE_NOISE_MAGNITUDE)) 
+        if (safeTorqueExceededHourglass.lastEmptiedSideIsForward())
         {
-            nonzeroTorqueTimer.set(NONZERO_TORQUE_MAX_TIME);
-            // debugPrint("Starting nonzero torque timer for n seconds: "); debugPrintln(String(NONZERO_TORQUE_MAX_TIME));
-        }
-        if (nonzeroTorqueTimer.isRinging())
-        {
-            // debugPrintln("Torque is nonzero for n seconds");
-            removeTorque();
-            nonzeroTorqueTimer.stopRinging();
+            setTorqueLimitWithError(RAW_SAFE_TORQUE, SAFE_TORQUE_LIMIT);
         }
 
-        // if temperature > maximum, completely remove torque
-        if (getTemperature() > maxTemperature) 
+        // if torque is nonzero for n cumulative seconds, limit to 0 until operator resets
+        if (torqueIsExceeded(RAW_TORQUE_NOISE_MAGNITUDE))
         {
-            // debugPrintln("Temperature Exceeded");
-            removeTorque();
+            nonzeroTorqueHourglass.runForward();
+        }
+        else if (!nonzeroTorqueHourglass.lastEmptiedSideIsForward())
+        {
+            nonzeroTorqueHourglass.runBackward();
+        }
+        if (nonzeroTorqueHourglass.outOfTimeForward()) 
+        {
+            setTorqueLimitWithError(0, ZERO_TORQUE_LIMIT);
+        }
+
+        // if temperature > maximum, completely remove torque. Cannot operate until cooldown
+        if (getTemperature() >= maxTemperature) 
+        {
+            debugPrintln("Temperature Exceeded");
+            setTorqueLimitWithError(0, TEMPERATURE);
         }
     }
 
-    bool torqueIsExceeded(int rawTorque) {
-        return (abs(getRawMeasuredTorque()) > rawTorque ||
-            getRawTorqueLimit() > rawTorque ||
-            abs(getRawDesiredTorque()) > rawTorque);
+    bool torqueIsExceeded(int rawTorque, bool inclusive = false) {
+        if (inclusive)
+        {
+            // return (abs(getRawMeasuredTorque()) >= rawTorque ||
+            //     getRawTorqueLimit() >= rawTorque ||
+            //     abs(getRawDesiredTorque()) >= rawTorque);
+            return (abs(getRawMeasuredTorque()) >= rawTorque);
+        }
+        else
+        {
+            // return (abs(getRawMeasuredTorque()) > rawTorque ||
+            //     getRawTorqueLimit() > rawTorque ||
+            //     abs(getRawDesiredTorque()) > rawTorque);
+            return (abs(getRawMeasuredTorque()) > rawTorque);
+        }
+
+    }
+
+    void setTorqueLimitWithError(int limit, GripperError nerror) {
+        desiredTorqueLimit = min(limit, desiredTorqueLimit);
+        error = nerror;
+    }
+
+    // anything that alters torque should use this method
+    void sendDesiredTorqueToDynamixel() {
+        int torque = constrain(desiredTorque, 0, desiredTorqueLimit);
+        dxl->writeControlTableItem(ControlTableItem::TORQUE_LIMIT, dxl_id, torque);
+        dxl->writeControlTableItem(ControlTableItem::GOAL_TORQUE, dxl_id, (unsigned short)(1024+torque));
     }
 
 public:
@@ -140,6 +200,8 @@ private:
         dxl->writeControlTableItem(ControlTableItem::GOAL_TORQUE, dxl_id, 1024 + 10); // reduce the load or something
         dxl->writeControlTableItem(ControlTableItem::MULTI_TURN_OFFSET, dxl_id, 0); //  multi turn offset is 0
         zero_position = getRawAbsolutePosition();
+
+        removeTorque();
         debugPrintln("Calibrated");
     }
 
@@ -152,7 +214,7 @@ public:
         int position = convertRatioToRawDynamixel(positionRatio, RAW_MAX_OPEN_POSITION);
         int torque = convertRatioToRawDynamixel(torqueRatio, RAW_MAX_TORQUE);
         
-        setRawTorque(torque);
+        desiredTorque = torque;
         if (position == 0) {
             closeWithTorque();
         } else {
@@ -166,20 +228,23 @@ public:
 
     void setTorque(float torqueRatio) {
         int torque = convertRatioToRawDynamixel(torqueRatio, RAW_MAX_TORQUE);
-        setRawTorque(torque);
+        desiredTorque = torque;
     }
 
-    void reduceToSafeTorque() {
-        setRawTorque(RAW_SAFE_TORQUE);
-        // debugPrintln("Reducing to safe torque");
+    void clearErrorAndResetLimit() {
+        desiredTorqueLimit = RAW_MAX_TORQUE;
+        error = NONE;
+        safeTorqueExceededHourglass.reset();
+        nonzeroTorqueHourglass.reset();
+        removeTorque();
     }
 
     void removeTorque() {
         setTorque(0);
         setTorqueMode(false);
-        // debugPrintln("Removing torque");
     }
 
+// Accessors
 public:
     int getTemperature() {
         return dxl->readControlTableItem(ControlTableItem::PRESENT_TEMPERATURE, dxl_id);
@@ -199,8 +264,8 @@ public:
         return is_busy;
     }
 
-    int getError() {
-        return 0; // placeholder. for now it does nothing
+    GripperError getError() {
+        return error;
     }
 
 private:
@@ -213,11 +278,6 @@ private:
         setTorqueMode(false);
         dxl->writeControlTableItem(ControlTableItem::GOAL_POSITION, dxl_id, (zero_position + position));
         is_busy = true;
-    }
-
-    void setRawTorque(int torque) {
-        dxl->writeControlTableItem(ControlTableItem::TORQUE_LIMIT, dxl_id, torque);
-        dxl->writeControlTableItem(ControlTableItem::GOAL_TORQUE, dxl_id, (unsigned short)(1024+torque));
     }
 
     bool isMoving() {
@@ -253,7 +313,7 @@ private:
 
     int getRawDesiredTorque() {
         int rawTorque = dxl->readControlTableItem(ControlTableItem::GOAL_TORQUE, dxl_id);
-        if (rawTorque > 1024) {
+        if (rawTorque >= 1024) {
             rawTorque -= 1024;
             return -rawTorque;
         }

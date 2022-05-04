@@ -11,9 +11,9 @@
 // Interaction is always in seconds
 struct Timer {
 private:
-    unsigned long timeStartAbs; // in appropriate unit
+    long timeStartAbs; // in appropriate unit
     float periodSec;
-    unsigned long periodUnit;
+    long periodUnit;
     unsigned long (*checkTimeAbs)();
     bool using_precision;
 
@@ -36,15 +36,15 @@ public:
     }
 
 private: 
-    unsigned long convertSecToUnit(float t) {
+    long convertSecToUnit(float t) {
         if (using_precision) {
-            return (unsigned long) (t * 1000000);
+            return (long) (t * 1000000);
         } else {
-            return (unsigned long) (t * 1000);
+            return (long) (t * 1000);
         }
     }
 
-    float convertUnitToSec(unsigned long t) {
+    float convertUnitToSec(long t) {
         if (using_precision) {
             return t / 1000000.0;
         } else {
@@ -87,16 +87,12 @@ public:
     }
 
     float dt() {
-        if (using_precision) {
-            return (checkTimeAbs() - timeStartAbs) / 1000000.0;
-        } else {
-            return (checkTimeAbs() - timeStartAbs) / 1000.0;
-        }
+        return convertUnitToSec(checkTimeAbs() - timeStartAbs);
     }
 
 private:
     float checkTimeLeftUnit() {
-        return (timeStartAbs + periodUnit - checkTimeAbs());
+        return (long) (timeStartAbs + periodUnit - checkTimeAbs());
     }
 
 public:

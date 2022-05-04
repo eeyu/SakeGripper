@@ -65,33 +65,35 @@ public:
         llGripper.setZero(zero);
     }
 
+    float getPosition() {
+        return llGripper.getPositionRatio();
+    }
+
 private:
     void executeCommand(EcatCommandInfo ecatCommandInfo) {
         float positionRatio;
         float torqueRatio;
         switch (ecatCommandInfo.command) {
             case CALIBRATE:
-                DEBUG_SERIAL.println("execute calibrate");
+                // DEBUG_SERIAL.println("\nexecute calibrate");
                 llGripper.calibrate();
                 break;
             case GOTO:
                 positionRatio = convertEcatToRatio(ecatCommandInfo.position);
                 torqueRatio = convertEcatToRatio(ecatCommandInfo.torque);
                 llGripper.gotoPositionWithTorque(positionRatio, torqueRatio);
-                DEBUG_SERIAL.println("execute goto");
+                // DEBUG_SERIAL.println("\nexecute goto");
                 break;
             case RELEASE:
                 llGripper.removeTorque();
-                DEBUG_SERIAL.println("execute release");
+                // DEBUG_SERIAL.println("\nexecute release");
                 break;
             case OPEN:
                 llGripper.open();
-                DEBUG_SERIAL.println("execute open");
+                // DEBUG_SERIAL.println("\nexecute open");
                 break;
-            case SET_TORQUE:
-                torqueRatio = convertEcatToRatio(ecatCommandInfo.torque);
-                llGripper.setTorque(torqueRatio);
-                DEBUG_SERIAL.println("execute open");
+            case CLEAR_ERROR:
+                llGripper.clearErrorAndResetLimit();
                 break;
             default:
                 break;
