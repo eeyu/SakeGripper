@@ -59,7 +59,7 @@ public:
         // maxTemperature = dxl->readControlTableItem(ControlTableItem::TEMPERATURE_LIMIT, dxl_id);
         maxTemperature = MAX_TEMPERATURE;
         // Safety check. Shuts down on torque, temperature errors
-        dxl->writeControlTableItem(ControlTableItem::SHUTDOWN, dxl_id, 0x3D);
+        dxl->writeControlTableItem(ControlTableItem::SHUTDOWN, dxl_id, 36);
 
         printTimer.set(1.0);
     }
@@ -67,17 +67,17 @@ public:
     void operate() {
         if (printTimer.isRinging()) {
             printTimer.restart();
-            DEBUG_SERIAL.println(" ----");
-            DEBUG_SERIAL.print(String(" _DT ") +getRawDesiredTorque());
-            DEBUG_SERIAL.print(String(" _LT ") +getRawTorqueLimit());
-            DEBUG_SERIAL.print(String(" _MT ") +getRawMeasuredTorque());
+            // DEBUG_SERIAL.println(" ----");
+            // DEBUG_SERIAL.print(String(" _DT ") +getRawDesiredTorque());
+            // DEBUG_SERIAL.print(String(" _LT ") +getRawTorqueLimit());
+            // DEBUG_SERIAL.print(String(" _MT ") +getRawMeasuredTorque());
 
-            DEBUG_SERIAL.print(String(" Des_T ") +desiredTorque);
-            DEBUG_SERIAL.print(String(" Lim_T ") +desiredTorqueLimit);
-            DEBUG_SERIAL.print(String(" HGST ") + safeTorqueExceededHourglass.getTimeLeftForwardSec());
-            DEBUG_SERIAL.print(String(" HG0T ") + nonzeroTorqueHourglass.getTimeLeftForwardSec());
-            DEBUG_SERIAL.print(String(" Err ") + error);
-            DEBUG_SERIAL.print(String(" Tmp ") +getTemperature());
+            // DEBUG_SERIAL.print(String(" Des_T ") +desiredTorque);
+            // DEBUG_SERIAL.print(String(" Lim_T ") +desiredTorqueLimit);
+            // DEBUG_SERIAL.print(String(" HGST ") + safeTorqueExceededHourglass.getTimeLeftForwardSec());
+            // DEBUG_SERIAL.print(String(" HG0T ") + nonzeroTorqueHourglass.getTimeLeftForwardSec());
+            // DEBUG_SERIAL.print(String(" Err ") + error);
+            // DEBUG_SERIAL.print(String(" Tmp ") +getTemperature());
         }
         if (calibration_timer.isTickingDown()) 
         {
@@ -171,7 +171,6 @@ private:
         error = nerror;
     }
 
-    // anything that alters torque should use this method
     void sendDesiredsToDynamixel() {
         int torque = constrain(desiredTorque, 0, desiredTorqueLimit);
         
@@ -217,7 +216,7 @@ private:
         zero_position = getRawAbsolutePosition();
 
         removeTorque();
-        debugPrintln("Calibrated");
+        debugPrintln(String("Calibrated: ") + zero_position);
     }
 
 public:

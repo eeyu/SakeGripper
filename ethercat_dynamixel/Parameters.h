@@ -15,7 +15,7 @@ const float DXL_BAUD_RATE = 57600;
 
 const int ECAT_RESOLUTION = 255;
 
-const int DEFAULT_LEFT_ZERO = 0;
+const int DEFAULT_LEFT_ZERO = 0; // The offsets have already been set on dynamixel. 0 is loose grip
 const int DEFAULT_RIGHT_ZERO = 0;
 
 const int RAW_SAFE_TORQUE = 104; // 0 to 1023
