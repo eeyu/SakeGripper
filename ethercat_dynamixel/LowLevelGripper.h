@@ -176,6 +176,8 @@ private:
         
         if (torque == 0)
         {
+            dxl->writeControlTableItem(ControlTableItem::GOAL_TORQUE, dxl_id, (unsigned short)(1024));
+            dxl->writeControlTableItem(ControlTableItem::TORQUE_LIMIT, dxl_id, 0);
             dxl->writeControlTableItem(ControlTableItem::TORQUE_ENABLE, dxl_id, 0);
         }
         else
