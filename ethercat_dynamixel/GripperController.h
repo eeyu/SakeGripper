@@ -44,7 +44,7 @@ public:
         bool newCommandWasSent = (lastCommandSignal != ecatCommandInfo.command) 
             && (ecatCommandInfo.command != EcatCommandSignal::WAITING);
 
-//        if (!llGripper.isBusy() && newCommandWasSent) {
+    //    if (!llGripper.isBusy() && newCommandWasSent) {
         if (newCommandWasSent || ecatCommandInfo.command == EcatCommandSignal::GOTO) {
             executeCommand(ecatCommandInfo);
         }

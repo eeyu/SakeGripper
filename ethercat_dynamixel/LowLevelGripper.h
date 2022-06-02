@@ -38,6 +38,7 @@ private:
     int desiredPosition = 0;
 
     GripperError error = NONE;
+    bool requireOperatorToResetError = false;
 
 public:
     LowLevelGripper() {
@@ -65,9 +66,9 @@ public:
     }
 
     void operate() {
-        if (printTimer.isRinging()) {
-            printTimer.restart();
-            // DEBUG_SERIAL.println(" ----");
+        // if (printTimer.isRinging()) {
+        //     printTimer.restart();
+        //     DEBUG_SERIAL.println(" ----");
             // DEBUG_SERIAL.print(String(" _DT ") +getRawDesiredTorque());
             // DEBUG_SERIAL.print(String(" _LT ") +getRawTorqueLimit());
             // DEBUG_SERIAL.print(String(" _MT ") +getRawMeasuredTorque());
@@ -78,7 +79,7 @@ public:
             // DEBUG_SERIAL.print(String(" HG0T ") + nonzeroTorqueHourglass.getTimeLeftForwardSec());
             // DEBUG_SERIAL.print(String(" Err ") + error);
             // DEBUG_SERIAL.print(String(" Tmp ") +getTemperature());
-        }
+        // }
         if (calibration_timer.isTickingDown()) 
         {
             if (calibration_timer.isRinging()) 
@@ -102,8 +103,12 @@ public:
 private:
     // Lower on chain is more severe error
     void performSafetyChecks() {
-        desiredTorqueLimit = RAW_MAX_TORQUE;
-        error = NONE;
+        if (!requireOperatorToResetError)
+        {
+            desiredTorqueLimit = RAW_MAX_TORQUE;
+            error = NONE;
+        }
+
         // when no motion is detected, reduce to safe torque. 
         if (!isMoving()) 
         {
@@ -138,6 +143,7 @@ private:
         if (nonzeroTorqueHourglass.outOfTimeForward()) 
         {
             setTorqueLimitWithError(0, ZERO_TORQUE_LIMIT);
+            requireOperatorToResetError = true;
         }
 
         // if temperature > maximum, completely remove torque. Cannot operate until cooldown
@@ -145,6 +151,7 @@ private:
         {
             debugPrintln("Temperature Exceeded");
             setTorqueLimitWithError(0, TEMPERATURE);
+            requireOperatorToResetError = true;
         }
     }
 
@@ -249,6 +256,7 @@ public:
         safeTorqueExceededHourglass.reset();
         nonzeroTorqueHourglass.reset();
         removeTorque();
+        requireOperatorToResetError = false;
     }
 
     void removeTorque() {
